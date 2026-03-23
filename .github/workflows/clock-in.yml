@@ -1,0 +1,26 @@
+name: Clock In
+
+on:
+  schedule:
+    - cron: "0 11 * * 1-5" # Clock IN — 7:00 PM PHT = 11:00 UTC, Mon-Fri
+  workflow_dispatch: # enables manual trigger from GitHub UI
+
+jobs:
+  clock-in:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Clock In
+        env:
+          ESS_USERNAME: ${{ secrets.ESS_USERNAME }}
+          ESS_PASSWORD: ${{ secrets.ESS_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: node main.js in

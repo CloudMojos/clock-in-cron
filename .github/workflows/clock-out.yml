@@ -1,0 +1,26 @@
+name: Clock Out
+
+on:
+  schedule:
+    - cron: "15 22 * * 2-6" # Clock OUT — 6:15 AM PHT = 22:15 UTC previous day, Tue-Sat
+  workflow_dispatch:
+
+jobs:
+  clock-out:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Clock Out
+        env:
+          ESS_USERNAME: ${{ secrets.ESS_USERNAME }}
+          ESS_PASSWORD: ${{ secrets.ESS_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: node main.js out
