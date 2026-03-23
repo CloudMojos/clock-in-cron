@@ -1,5 +1,6 @@
-const { Resend } = require("resend");
-require("dotenv").config();
+import { Resend } from "resend";
+import dotenv from "dotenv";
+dotenv.config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE = "https://penbrothers-ess-api.payrollsolutions.ph";
