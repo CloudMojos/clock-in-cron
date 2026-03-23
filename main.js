@@ -45,7 +45,14 @@ async function bundy(token, cookie, type) {
   });
 
   if (!res.ok) throw new Error(`Clock ${type} failed: ${res.status}`);
-  return await res.json();
+  // Try to parse as JSON, but fallback to text if not JSON
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // Not JSON, return as plain text
+    return text;
+  }
 }
 
 async function sendEmail(type, success, detail) {
