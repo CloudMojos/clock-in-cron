@@ -52,17 +52,26 @@ async function sendEmail(type, success, detail) {
   const timestamp = new Date().toLocaleString("en-PH", {
     timeZone: "Asia/Manila",
   });
-
-  await resend.emails.send({
-    from: "Bundy Bot <bundy@yourdomain.com>",
-    to: process.env.NOTIFY_EMAIL,
-    subject: success
-      ? `✅ Clock ${type} Successful — ${timestamp}`
-      : `❌ Clock ${type} Failed — ${timestamp}`,
-    html: success
-      ? `<h2>✅ Clock ${type} successful</h2><p><strong>Time:</strong> ${timestamp}</p><pre>${JSON.stringify(detail, null, 2)}</pre>`
-      : `<h2>❌ Clock ${type} failed</h2><p><strong>Time:</strong> ${timestamp}</p><p><strong>Error:</strong> ${detail}</p>`,
-  });
+  try {
+    await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: process.env.NOTIFY_EMAIL,
+      subject: success
+        ? `✅ Clock ${type} Successful — ${timestamp}`
+        : `❌ Clock ${type} Failed — ${timestamp}`,
+      html: success
+        ? `<h2>✅ Clock ${type} successful</h2><p><strong>Time:</strong> ${timestamp}</p><pre>${JSON.stringify(detail, null, 2)}</pre>`
+        : `<h2>❌ Clock ${type} failed</h2><p><strong>Time:</strong> ${timestamp}</p><p><strong>Error:</strong> ${detail}</p>`,
+    });
+    console.log(
+      `📧 Email sent to ${process.env.NOTIFY_EMAIL} for Clock ${type} (${success ? "success" : "failure"}) at ${timestamp}`,
+    );
+  } catch (emailErr) {
+    console.error(
+      `❌ Failed to send email to ${process.env.NOTIFY_EMAIL} for Clock ${type} at ${timestamp}:`,
+      emailErr.message,
+    );
+  }
 }
 
 async function main() {
