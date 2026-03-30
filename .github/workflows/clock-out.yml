@@ -2,7 +2,9 @@ name: Clock Out
 
 on:
   schedule:
-    - cron: "15 22 * * 2-6" # Clock OUT — 6:15 AM PHT = 22:15 UTC previous day, Tue-Sat
+    - cron: "15 6 * * 2-6" # Clock OUT — 6:15 AM PHT, Tue-Sat
+      timezone: Asia/Manila
+    
   workflow_dispatch:
 
 jobs:

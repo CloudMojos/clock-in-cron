@@ -2,7 +2,8 @@ name: Clock In
 
 on:
   schedule:
-    - cron: "0 11 * * 1-5" # Clock IN — 7:00 PM PHT = 11:00 UTC, Mon-Fri
+    - cron: "0 19 * * 1-5" # Clock IN — 7:00 PM PHT, Mon-Fri
+      timezone: Asia/Manila
   workflow_dispatch: # enables manual trigger from GitHub UI
 
 jobs:
