@@ -1,0 +1,3 @@
+# Add one work date per line in YYYY-MM-DD using Asia/Manila dates.
+# A Friday off day should be entered as Friday's date.
+# That skips Friday's clock-in and the Saturday morning clock-out.

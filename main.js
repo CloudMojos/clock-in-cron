@@ -1,9 +1,77 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
+import { existsSync, readFileSync } from "node:fs";
+
 dotenv.config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE = "https://penbrothers-ess-api.payrollsolutions.ph";
+const TIMEZONE = "Asia/Manila";
+const OFF_DAYS_FILE = new URL("./off-days.txt", import.meta.url);
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function getManilaDate(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(
+    parts
+      .filter(({ type }) => type !== "literal")
+      .map(({ type, value }) => [type, value]),
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function shiftDate(date, days) {
+  const [year, month, day] = date.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + days));
+  return shifted.toISOString().slice(0, 10);
+}
+
+function getWorkDate(type, now = new Date()) {
+  const manilaDate = getManilaDate(now);
+  return type === "OUT" ? shiftDate(manilaDate, -1) : manilaDate;
+}
+
+function parseOffDays(raw) {
+  return raw.split(/[\n,]/).reduce((dates, entry) => {
+    const value = entry.split("#")[0].trim();
+
+    if (!value) return dates;
+    if (!ISO_DATE.test(value)) {
+      console.warn(`Ignoring invalid off day "${value}". Use YYYY-MM-DD.`);
+      return dates;
+    }
+
+    dates.add(value);
+    return dates;
+  }, new Set());
+}
+
+function loadOffDays() {
+  const offDays = new Set();
+
+  if (existsSync(OFF_DAYS_FILE)) {
+    for (const date of parseOffDays(readFileSync(OFF_DAYS_FILE, "utf8"))) {
+      offDays.add(date);
+    }
+  }
+
+  return offDays;
+}
+
+function shouldSkipClock(type, now = new Date()) {
+  const workDate = getWorkDate(type, now);
+  return {
+    workDate,
+    skip: loadOffDays().has(workDate),
+  };
+}
 
 async function login() {
   const res = await fetch(`${BASE}/login`, {
@@ -57,7 +125,7 @@ async function bundy(token, cookie, type) {
 
 async function sendEmail(type, success, detail) {
   const timestamp = new Date().toLocaleString("en-PH", {
-    timeZone: "Asia/Manila",
+    timeZone: TIMEZONE,
   });
   try {
     await resend.emails.send({
@@ -83,6 +151,16 @@ async function sendEmail(type, success, detail) {
 
 async function main() {
   const type = (process.argv[2] || "IN").toUpperCase();
+
+  if (!["IN", "OUT"].includes(type)) {
+    throw new Error('Clock type must be "IN" or "OUT".');
+  }
+
+  const { skip, workDate } = shouldSkipClock(type);
+  if (skip) {
+    console.log(`Skipping Clock ${type} for off day ${workDate}`);
+    return;
+  }
 
   try {
     const { token, cookie } = await login();
